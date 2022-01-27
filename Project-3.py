@@ -197,7 +197,7 @@ while (loop == True):
         loadedContainer.append(currContainer)
         weight += loadedContainer[2][1][0]
         currBinthree = loadedContainer[2][3]
-        if ((currBinthree == currBin)and (weight <90)):
+        if ((currBinthree == currBin) and (weight < 90)):
             pickContainer()
             thirdPick()
         else:
@@ -205,13 +205,8 @@ while (loop == True):
             loop = False
     else:
         table.rotate_table_angle(270)
-            loop = False
+        loop = False
     loop = False
-
-
-
-
-
 # ---------------------------------------------------------------------------------
 # STUDENT CODE ENDS
 # ---------------------------------------------------------------------------------
