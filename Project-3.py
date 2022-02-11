@@ -6,13 +6,13 @@ from Common.project_library import *
 
 # 1. Interface Configuration
 project_identifier = 'P3B'
-ip_address = '192.168.1.53'
+ip_address = '192.168.1.53' #'169.254.89.137'
 hardware = False #Real life True / Q-Labs False
 
 # 2. Servo Table configuration
-short_tower_angle = 270
-tall_tower_angle = 225
-drop_tube_angle = 270
+short_tower_angle = 0
+tall_tower_angle = 0
+drop_tube_angle = 180
 
 # 3. Qbot Configuration
 bot_camera_angle = 0 # angle in degrees between -21.5 and 0
@@ -56,57 +56,16 @@ elif project_identifier == 'P3B':
 #---------------------------------------------------------------------------------
 # STUDENT CODE BEGINS
 #---------------------------------------------------------------------------------
-def check_Container():
-        table.rotate_table_angle(45)
-        
-        container = []
-        
-        check_Color_one = table.photoelectric_sensor(0.2)
-        check_Color_two = table.inductive_sensor(0.2)
-        
-        if check_Color_one[0] > 4 and check_Color_two[0] > 4:
-            container.append("metal")
-        elif check_Color_one[0] < 1 and check_Color_two[0] < 1:
-            container.append("plastic")
-        else:
-            container.append("paper")
-            
-        check_Clean = table.load_cell_sensor(0.2)
-        container.append(check_Clean)
-        
-        if (container[0] == "plastic" and check_Clean[0] > 9.5) or (container[0] == "metal" and check_Clean[0] > 15.5) or (container[0] == "paper" and check_Clean[0] > 10.5):
-            container.append("dirty")
-            if container[0] == "metal":
-                container.append("1")
-            elif container[0] == "plastic":
-                container.append("4")
-            else:
-                container.append("4")
-        else:
-            container.append("clean")
-            if container[0] == "metal":
-                container.append("1")
-            elif container[0] == "plastic":
-                container.append("3")
-            else:
-                container.append("2")
-
-        table.rotate_table_angle(45)
-
-        return container
-
-def gen_Rand():
-    rand_Num = random.randint(1,6)
-    table.dispense_container(rand_Num)
+def check_Container(curr_Bin, bin_Check, weight):
+    if (bin_Check == curr_Bin) and (weight < 90):
+        return True
+    else:
+        return False
 
 def dispense_Container():
-    if table.proximity_sensor_short():
-        attributes = check_Container()
-    else:
-        gen_Rand()
-        time.sleep(1)
-        attributes = check_Container()
-    return attributes
+    rand_Num = random.randint(1,6)
+    container = table.dispense_container(rand_Num, True)
+    return container
 
 def pick_Container():
     time.sleep(1)
@@ -116,6 +75,7 @@ def pick_Container():
     time.sleep(1)
 
 def first_Pick():
+    pick_Container()
     time.sleep(1)
     arm.move_arm(0.02, -0.59, 0.57)
     time.sleep(2)
@@ -127,6 +87,7 @@ def first_Pick():
     time.sleep(1)
 
 def second_Pick():
+    pick_Container()
     time.sleep(1)
     arm.move_arm(0.02, -0.52, 0.56)
     time.sleep(2)
@@ -138,6 +99,7 @@ def second_Pick():
     time.sleep(1)
 
 def third_Pick():
+    pick_Container()
     time.sleep(1)
     arm.move_arm(0.02, -0.46, 0.56)
     time.sleep(2)
@@ -163,24 +125,18 @@ def line_follow():
 def deposit_container():
     bot.stop()
     bot.activate_linear_actuator()
-    i = 0
-    while i <= 60:
-        bot.rotate_hopper(i)
-        time.sleep(0.1)
-        i += 15
-    time.sleep(1)
-    bot.rotate_hopper(0)
+    bot.dump()
     bot.deactivate_linear_actuator()
     
 def transfer_container(num):
     bot.activate_ultrasonic_sensor()
     bot.activate_color_sensor()
     dump = False
-    if (num == "1"):
+    if (num == "Bin01"):
         target = [1,0,0]
-    elif (num == "2"):
+    elif (num == "Bin02"):
         target = [0,1,0]
-    elif (num == "3"):
+    elif (num == "Bin03"):
         target = [0,0,1]
     else:
         target = [1,0,1]
@@ -189,25 +145,7 @@ def transfer_container(num):
         distance = bot.read_ultrasonic_sensor()
         reading_One = bot.read_color_sensor()
         color = reading_One[0]
-        if target == color and distance <= 0.05:
-            bot.stop()
-            deposit_container()
-            bot.deactivate_ultrasonic_sensor()
-            bot.deactivate_color_sensor()
-            dump = True
-        elif target == color and distance <= 0.05:
-            bot.stop()
-            deposit_container()
-            bot.deactivate_ultrasonic_sensor()
-            bot.deactivate_color_sensor()
-            dump = True
-        elif target == color and distance <= 0.05:
-            bot.stop()
-            deposit_container()
-            bot.deactivate_ultrasonic_sensor()
-            bot.deactivate_color_sensor()
-            dump = True
-        elif target == color and distance <= 0.05:
+        if target == color and distance <= 0.049:
             bot.stop()
             deposit_container()
             bot.deactivate_ultrasonic_sensor()
@@ -215,6 +153,8 @@ def transfer_container(num):
             dump = True
         else:
             pass
+    bot.deactivate_ultrasonic_sensor()
+    bot.deactivate_color_sensor()
     
 def check_Pos():
     home = (1.5,0,0)
@@ -238,38 +178,40 @@ weight = 0
 loop = True
 while loop == True:
     curr_Container = dispense_Container()
-    time.sleep(1)
-    print(curr_Container)
     loaded_Container.append(curr_Container)
-    weight += loaded_Container[0][1][0]
-    curr_Bin = loaded_Container[0][3]
-    pick_Container()
+    weight += loaded_Container[0][1]
+    curr_Bin = loaded_Container[0][2]
+    print(curr_Container)
+    
+    time.sleep(1)
     first_Pick()
     time.sleep(1)
+    
     curr_Container = dispense_Container()
-    time.sleep(1)
-    print(curr_Container)
     loaded_Container.append(curr_Container)
-    weight += loaded_Container[1][1][0]
-    curr_Bin_two = loaded_Container[1][3]
-    if (curr_Bin_two == curr_Bin) and (weight < 90):
-        pick_Container()
+    weight += loaded_Container[1][1]
+    bin_Check = loaded_Container[1][2]
+    print(curr_Container)
+    
+    time.sleep(1)
+    
+    if check_Container(curr_Bin, bin_Check, weight):
         second_Pick()
         time.sleep(1)
+        
         curr_Container = dispense_Container()
-        time.sleep(1)
-        print(curr_Container)
         loaded_Container.append(curr_Container)
-        weight += loaded_Container[2][1][0]
-        curr_Bin_three = loaded_Container[2][3]
-        if (curr_Bin_three == curr_Bin) and (weight < 90):
-            pick_Container()
+        weight += loaded_Container[2][1]
+        bin_Check = loaded_Container[2][2]
+        print(curr_Container)
+        
+        time.sleep(1)
+        
+        if check_Container(curr_Bin, bin_Check, weight):
             third_Pick()
         else:
-            table.rotate_table_angle(270)
             loop = False
     else:
-        table.rotate_table_angle(270)
         loop = False
         
     loop = False
