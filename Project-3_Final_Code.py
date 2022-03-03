@@ -308,7 +308,7 @@ def main():
             #Checks third containers variables
             if check_Container(curr_Bin, bin_Check, weight):
                 drop_Container()
-
+                bottle = False
 #If the container was not eligible to be placed on the hopper it's information is stored and the code knows theres a bottle already               
             else:
                 last_Container = curr_Container
